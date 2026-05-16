@@ -28,10 +28,10 @@ public class CancelDLQServiceImpl implements CancelDLQService {
 
             String json = objectMapper.writeValueAsString(payload);
             redisTemplate.opsForList().rightPush(DLQ_KEY, json);
-            log.warn("✅ DLQ 적재 완료 - orderId: {}, retry: {}", payload.getOrderId(), payload.getRetry());
+            log.warn("DLQ 적재 완료 - orderId: {}, retry: {}", payload.getOrderId(), payload.getRetry());
 
         } catch (Exception e) {
-            log.error("🔥 DLQ Redis 적재 실패 - orderId: {}", event.getOrderId(), e);
+            log.error("DLQ Redis 적재 실패 - orderId: {}", event.getOrderId(), e);
         }
     }
 }

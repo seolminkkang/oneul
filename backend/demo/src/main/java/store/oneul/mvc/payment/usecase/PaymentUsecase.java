@@ -52,7 +52,7 @@ public class PaymentUsecase {
             return PaymentResultResponse.success(tossResponse);
 
         } catch (Exception e) {
-            log.error("❌ 결제 저장 실패 → TossCancel 보상 처리 진입", e);
+            log.error("결제 저장 실패 → TossCancel 보상 처리 진입", e);
 
             try {
                 // 6. Toss 결제 취소
@@ -67,7 +67,7 @@ public class PaymentUsecase {
                 return PaymentResultResponse.refunded(tossResponse, refundAmount, refundedAt);
 
             } catch (Exception ex) {
-                log.error("❌ TossCancel 또는 환불기록 실패 → 수동 환불 전환 필요", ex);
+                log.error("TossCancel 또는 환불기록 실패 → 수동 환불 전환 필요", ex);
 
                 // 9. 수동 환불 응답 반환
                 return PaymentResultResponse.refundPending(tossResponse);

@@ -27,7 +27,7 @@ public class CompensationServiceImpl implements CompensationService {
             refundReceiptService.recordAutoRefund(event, refundAmount, "DB 저장 실패로 인한 자동 환불");
 
         } catch (Exception e) {
-            log.error("❌ Toss Cancel 실패 - DLQ 적재 예정", e);
+            log.error("Toss Cancel 실패 - DLQ 적재 예정", e);
             // TODO: Redis DLQ 적재
             cancelDLQService.pushToQueue(event);
         }

@@ -45,10 +45,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                                     List.of(new SimpleGrantedAuthority("ROLE_USER"))
                             );
                     SecurityContextHolder.getContext().setAuthentication(authentication);
-                    System.out.println("[AUTH] ✅ 인증 성공: userId = " + userId);
+                    System.out.println("[AUTH] 인증 성공: userId = " + userId);
                 }
             } catch (Exception e) {
-                System.out.println("[AUTH] ❌ 인증 실패: " + e.getMessage());
+                System.out.println("[AUTH] 인증 실패: " + e.getMessage());
             }
         }
 

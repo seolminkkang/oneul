@@ -31,7 +31,7 @@ public class RefundReceiptServiceImpl implements RefundReceiptService {
         receipt.setNote("orderId: " + event.getOrderId() + " / " + reason);
 
         paymentDAO.insertRefundReceipt(receipt);
-        log.info("💾 환불 내역 저장 완료 (userId: {}, amount: {})", event.getUserId(), refundAmount);
+        log.info("환불 내역 저장 완료 (userId: {}, amount: {})", event.getUserId(), refundAmount);
     }
     
     @Override
@@ -47,7 +47,7 @@ public class RefundReceiptServiceImpl implements RefundReceiptService {
         receipt.setNote("orderId: " + payload.getOrderId() + " / " + reason);
 
         paymentDAO.insertRefundReceipt(receipt);
-        log.info("💾 DLQ 환불 저장 완료 (userId: {}, retry: {}, amount: {})",
+        log.info("DLQ 환불 저장 완료 (userId: {}, retry: {}, amount: {})",
                  payload.getUserId(), payload.getRetry(), refundAmount);
     }
 
