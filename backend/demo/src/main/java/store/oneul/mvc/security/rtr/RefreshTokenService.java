@@ -39,7 +39,7 @@ public class RefreshTokenService {
 
             String saved = refreshTokenRepository.findByUserId(userIdStr);
             if (!refreshToken.equals(saved)) {
-                System.out.println("[RTR] ❌ RefreshToken mismatch for userId = " + userIdStr);
+                System.out.println("[RTR] RefreshToken mismatch for userId = " + userIdStr);
                 return Optional.empty();
             }
 
@@ -49,11 +49,11 @@ public class RefreshTokenService {
             String newRefreshToken = UUID.randomUUID().toString();
            // refreshTokenRepository.save(userIdStr, newRefreshToken, REFRESH_TOKEN_EXPIRATION);
 
-            System.out.println("[RTR] ✅ Access & Refresh Token reissued for userId = " + userIdStr);
+            System.out.println("[RTR] Access & Refresh Token reissued for userId = " + userIdStr);
 
             return Optional.of(newAccessToken);
         } catch (Exception e) {
-            System.out.println("[RTR] ❌ Error during token reissue: " + e.getMessage());
+            System.out.println("[RTR] Error during token reissue: " + e.getMessage());
             return Optional.empty();
         }
     }

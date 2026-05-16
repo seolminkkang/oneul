@@ -34,7 +34,7 @@ public class CancelRetryServiceImpl implements CancelRetryService {
 
         try {
             CancelRetryPayload payload = objectMapper.readValue(json, CancelRetryPayload.class);
-            log.warn("🔁 DLQ 재시도 시작 - orderId: {}, retry: {}", payload.getOrderId(), payload.getRetry());
+            log.warn("DLQ 재시도 시작 - orderId: {}, retry: {}", payload.getOrderId(), payload.getRetry());
 
             // TossCancel 재시도
             int refundAmount = tossCancelService.cancel(payload, RefundReason.valueOf(payload.getRefundType()));
@@ -42,24 +42,24 @@ public class CancelRetryServiceImpl implements CancelRetryService {
             // 환불 내역 저장
             refundReceiptService.recordRetryRefund(payload, refundAmount, "DLQ 재시도 환불 성공");
 
-            log.info("✅ DLQ 재시도 성공 - orderId: {}", payload.getOrderId());
+            log.info("DLQ 재시도 성공 - orderId: {}", payload.getOrderId());
 
         } catch (Exception e) {
-            log.error("❌ DLQ 재시도 실패", e);
+            log.error("DLQ 재시도 실패", e);
 
             try {
                 CancelRetryPayload failed = objectMapper.readValue(json, CancelRetryPayload.class);
                 int nextRetry = failed.getRetry() + 1;
 
                 if (nextRetry >= 3) {
-                    log.error("🔥 DLQ 3회 실패 - 수동 환불 전환 필요 (orderId: {})", failed.getOrderId());
+                    log.error("DLQ 3회 실패 - 수동 환불 전환 필요 (orderId: {})", failed.getOrderId());
 
                     // 1. paymentId 조회
                     Long paymentId = null;
                     try {
                         paymentId = paymentDAO.findIdByOrderId(failed.getOrderId());
                     } catch (Exception ex) {
-                        log.warn("⚠️ paymentId 조회 실패 - orderId: {}, 예외: {}", failed.getOrderId(), ex.getMessage());
+                        log.warn("paymentId 조회 실패 - orderId: {}, 예외: {}", failed.getOrderId(), ex.getMessage());
                     }
 
                     // 2. RefundReason Enum 변환
@@ -67,7 +67,7 @@ public class CancelRetryServiceImpl implements CancelRetryService {
                     try {
                         reason = RefundReason.valueOf(failed.getRefundType());
                     } catch (IllegalArgumentException ie) {
-                        log.warn("⚠️ RefundReason 변환 실패: {}, 기본값 TX_FAIL 사용", failed.getRefundType());
+                        log.warn("RefundReason 변환 실패: {}, 기본값 TX_FAIL 사용", failed.getRefundType());
                         reason = RefundReason.TX_FAIL;
                     }
 
@@ -78,7 +78,7 @@ public class CancelRetryServiceImpl implements CancelRetryService {
                     	    .userId(failed.getUserId())
                     	    .challengeId(failed.getChallengeId())
                     	    .amount(failed.getAmount())
-                    	    .type(reason.toDbValue())  // 💡 여기에 적용
+                    	    .type(reason.toDbValue())  // 여기에 적용
                     	    .errorStatus("DLQ_RETRY_3_FAILED")
                     	    .reason("DLQ 재시도 3회 실패")
                     	    .manualStatus("WAITING_FORM")
@@ -91,11 +91,11 @@ public class CancelRetryServiceImpl implements CancelRetryService {
                     failed.setRetry(nextRetry);
                     String retryJson = objectMapper.writeValueAsString(failed);
                     redisTemplate.opsForList().rightPush(DLQ_KEY, retryJson);
-                    log.warn("🔁 DLQ 재적재 완료 - orderId: {}, retry: {}", failed.getOrderId(), nextRetry);
+                    log.warn("DLQ 재적재 완료 - orderId: {}, retry: {}", failed.getOrderId(), nextRetry);
                 }
 
             } catch (Exception retryEx) {
-                log.error("🔥 DLQ 재적재 실패 - orderId: {}", json, retryEx);
+                log.error("DLQ 재적재 실패 - orderId: {}", json, retryEx);
             }
         }
     }

@@ -36,7 +36,7 @@ public class TossCancelServiceImpl implements TossCancelService {
         TossCancelRequest request = new TossCancelRequest(refundAmount, "자동 환불 처리: " + reason.name());
         tossClient.cancel(event.getPaymentKey(), request);
 
-        log.info("✅ Toss 결제 취소 성공 (paymentKey: {}, refundAmount: {})", event.getPaymentKey(), refundAmount);
+        log.info("Toss 결제 취소 성공 (paymentKey: {}, refundAmount: {})", event.getPaymentKey(), refundAmount);
         return refundAmount;
     }
     
@@ -54,7 +54,7 @@ public class TossCancelServiceImpl implements TossCancelService {
         TossCancelRequest request = new TossCancelRequest(refundAmount, "자동 환불 처리: " + reason.name());
         tossClient.cancel(payload.getPaymentKey(), request);
 
-        log.info("✅ Toss 결제 취소 성공 (paymentKey: {}, refundAmount: {})", payload.getPaymentKey(), refundAmount);
+        log.info("Toss 결제 취소 성공 (paymentKey: {}, refundAmount: {})", payload.getPaymentKey(), refundAmount);
         return refundAmount;
     }
 

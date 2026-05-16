@@ -87,7 +87,7 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
             response.addCookie(accessTokenCookie);
             response.addCookie(refreshTokenCookie);
 
-            // ✅ signupCompleted만 URL 파라미터로 전달
+            // signupCompleted만 URL 파라미터로 전달
             String redirectUrl = UriComponentsBuilder
                     .fromUriString(url + redirectPath)
                     .queryParam("signupCompleted", signupCompleted)

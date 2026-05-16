@@ -36,7 +36,7 @@ public class PaymentSaveServiceImpl implements PaymentSaveService{
         int result = paymentDAO.insertPayment(payment);
         if (result != 1) {
         	System.out.println(result);
-        	log.error("[❌결제 실패] payment insert 실패! orderId: {}", tossResponse.getOrderId());
+        	log.error("[결제 실패] payment insert 실패! orderId: {}", tossResponse.getOrderId());
         	throw new RuntimeException("payment insert failed");
         }
         // 2. challenge_user INSERT
@@ -49,7 +49,7 @@ public class PaymentSaveServiceImpl implements PaymentSaveService{
         result = challengeDAO.insertChallengeUser(challengeUser);
         if (result != 1) {
         	
-        	log.error("[❌결제 실패] challengeUser insert 실패! ");
+        	log.error("[결제 실패] challengeUser insert 실패! ");
             throw new RuntimeException("ChallengeUser insert failed");
         }
         // 3. 이벤트 발행 (실패 대비)
