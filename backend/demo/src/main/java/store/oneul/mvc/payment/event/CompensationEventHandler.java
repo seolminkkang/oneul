@@ -17,7 +17,7 @@ public class CompensationEventHandler {
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_ROLLBACK)
     public void onRollback(PaymentConfirmedEvent event) {
-        log.warn("🌀 트랜잭션 롤백 감지 - Toss 결제 취소 시도");
-        compensationService.handleConfirmFail(event);
+        log.warn("트랜잭션 롤백 감지 - Toss 결제 취소 시도");
+        compensationService.compensate(event);
     }
 }
