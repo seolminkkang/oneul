@@ -29,7 +29,7 @@ public class JwtReissueController {
         return refreshTokenService.reissue(refreshToken, accessToken)
             .map(newAccessToken -> ResponseEntity.ok(Map.of("accessToken", newAccessToken)))
             .orElseGet(() -> {
-                System.out.println("[REISSUE] ❌ Failed to reissue token");
+                System.out.println("[REISSUE] Failed to reissue token");
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                                      .body(Map.of("error", "토큰 재발급 실패"));
             });
@@ -43,10 +43,10 @@ public class JwtReissueController {
             Long userId = jwtProvider.getUserIdFromToken(accessToken);
             refreshTokenService.delete(String.valueOf(userId));
 
-            System.out.println("[LOGOUT] ✅ Successfully logged out userId = " + userId);
+            System.out.println("[LOGOUT] Successfully logged out userId = " + userId);
             return ResponseEntity.ok("로그아웃 완료");
         } catch (Exception e) {
-            System.out.println("[LOGOUT] ❌ Invalid token during logout: " + e.getMessage());
+            System.out.println("[LOGOUT] Invalid token during logout: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("잘못된 토큰");
         }
     }

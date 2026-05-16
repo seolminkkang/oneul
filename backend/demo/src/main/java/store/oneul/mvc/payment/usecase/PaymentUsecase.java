@@ -15,6 +15,8 @@ import store.oneul.mvc.payment.service.RefundReceiptService;
 import store.oneul.mvc.payment.service.TossCancelService;
 import store.oneul.mvc.payment.service.TossConfirmService;
 import store.oneul.mvc.payment.validator.PaymentValidator;
+import store.oneul.mvc.payment.dto.CompensationResultDTO;
+import store.oneul.mvc.payment.service.CompensationService;
 
 @Slf4j
 @Service
@@ -24,8 +26,8 @@ public class PaymentUsecase {
     private final PaymentValidator paymentValidator;
     private final TossConfirmService tossConfirmService;
     private final PaymentSaveService paymentSaveService;
-    private final TossCancelService tossCancelService;
-    private final RefundReceiptService refundReceiptService;
+    private final CompensationService compensationService;
+
 
     public PaymentResultResponse confirmPayment(Long userId, PaymentConfirmRequest request) {
 
@@ -52,26 +54,24 @@ public class PaymentUsecase {
             return PaymentResultResponse.success(tossResponse);
 
         } catch (Exception e) {
-            log.error("❌ 결제 저장 실패 → TossCancel 보상 처리 진입", e);
+            log.error("결제 저장 실패 → 보상 트랜잭션 진입, orderId: {}", tossResponse.getOrderId(), e);
 
-            try {
-                // 6. Toss 결제 취소
-                int refundAmount = tossCancelService.cancel(event, RefundReason.TX_FAIL);
+            // 6. 보상 흐름은 CompensationService가 담당
+            CompensationResultDTO compensationResult = compensationService.compensate(event);
 
-                // 7. 환불 내역 저장 (환불 시각은 지금 시간 기준)
-                String refundedAt = java.time.LocalDateTime.now().toString(); // ISO 8601 포맷
 
-                refundReceiptService.recordAutoRefund(event, refundAmount, "결제 저장 실패에 따른 자동 환불");
-
-                // 8. 응답 반환
-                return PaymentResultResponse.refunded(tossResponse, refundAmount, refundedAt);
-
-            } catch (Exception ex) {
-                log.error("❌ TossCancel 또는 환불기록 실패 → 수동 환불 전환 필요", ex);
-
-                // 9. 수동 환불 응답 반환
-                return PaymentResultResponse.refundPending(tossResponse);
+            // 7. Toss Cancel 성공
+            if (compensationResult.isRefunded()) {
+                return PaymentResultResponse.refunded(
+                        tossResponse,
+                        compensationResult.getRefundAmount(),
+                        compensationResult.getRefundedAt()
+                );
             }
+
+            // 8. Toss Cancel 실패 → Redis Queue 적재 후 환불 대기 응답
+            return PaymentResultResponse.refundPending(tossResponse);
         }
+
     }
 }

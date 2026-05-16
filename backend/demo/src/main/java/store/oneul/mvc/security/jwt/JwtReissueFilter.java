@@ -32,11 +32,11 @@ public class JwtReissueFilter extends OncePerRequestFilter {
             try {
                 jwtProvider.getUserIdFromToken(accessToken); // 정상 동작
             } catch (Exception ex) {
-                System.out.println("[FILTER] ⚠️ AccessToken expired or invalid. Attempting reissue.");
+                System.out.println("[FILTER] AccessToken expired or invalid. Attempting reissue.");
                 Optional<String> newAccessToken = refreshTokenService.reissue(refreshToken, accessToken);
                 newAccessToken.ifPresent(token -> {
                     response.setHeader("Authorization", "Bearer " + token);
-                    System.out.println("[FILTER] ✅ New AccessToken set in response header.");
+                    System.out.println("[FILTER] New AccessToken set in response header.");
                 });
             }
         }
