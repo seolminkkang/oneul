@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="store.oneul.mvc.payment.dao.RefundBatchDAO">
+
+    <!-- 종료 챌린지 조회
+         challenge_status 를 조건으로 쓰지 않고 end_date 로 고른다.
+         ENDED 로 바꾸는 코드가 어디에도 없어서 상태를 조건으로 쓰면 영원히 0건이다.
+         (notes/wiki/refund-batch-design.md Q2) -->
+    <select id="findEndedChallengeIds" resultType="long">
+        SELECT c.challenge_id
+        FROM challenge c
+        WHERE c.end_date &lt; CURDATE()
+          AND c.challenge_status &lt;&gt; 'ENDED'
+          AND c.deleted_at IS NULL
+        ORDER BY c.challenge_id
+    </select>
+
+    <!-- 환급 대상 조회
+         달성 판정: success_day >= goal_day (code-facts.md)
+         제외 조건: is_refunded = TRUE (이미 나간 건)
+         payment 를 JOIN 하는 이유: 환급 = 결제 취소라서 payment_key 가 있어야 하고,
+         멱등키가 payment.id 이기 때문에 대상 1건이 결제 1건으로 결정돼야 한다. -->
+    <select id="findRefundTargets" parameterType="long" resultType="RefundTargetDTO">
+        SELECT
+            p.id            AS payment_id,
+            p.order_id,
+            p.payment_key,
+            cu.user_id,
+            cu.challenge_id,
+            p.amount,
+            c.entry_fee,
+            c.start_date
+        FROM challenge_user cu
+        JOIN challenge c ON c.challenge_id = cu.challenge_id
+        JOIN payment p   ON p.challenge_id = cu.challenge_id
+                        AND p.user_id      = cu.user_id
+        WHERE cu.challenge_id = #{challengeId}
+          AND cu.success_day &gt;= c.goal_day
+          AND cu.is_refunded = FALSE
+          AND p.status = 'PAID'
+          AND p.deleted_at IS NULL
+        ORDER BY p.id
+    </select>
+
+    <select id="countRefundTargets" parameterType="long" resultType="int">
+        SELECT COUNT(*)
+        FROM challenge_user cu
+        JOIN challenge c ON c.challenge_id = cu.challenge_id
+        JOIN payment p   ON p.challenge_id = cu.challenge_id
+                        AND p.user_id      = cu.user_id
+        WHERE cu.challenge_id = #{challengeId}
+          AND cu.success_day &gt;= c.goal_day
+          AND cu.is_refunded = FALSE
+          AND p.status = 'PAID'
+          AND p.deleted_at IS NULL
+    </select>
+
+    <update id="markRefunded">
+        UPDATE challenge_user
+        SET is_refunded   = TRUE,
+            refund_amount = #{refundAmount},
+            completed_at  = NOW()
+        WHERE challenge_id = #{challengeId}
+          AND user_id      = #{userId}
+    </update>
+
+    <update id="markChallengeEnded" parameterType="long">
+        UPDATE challenge
+        SET challenge_status = 'ENDED'
+        WHERE challenge_id = #{challengeId}
+    </update>
+
+    <!-- ★ 건별 집계 누적. challenge_finance 는 챌린지당 행이 1개라
+         1,000건이 전부 같은 행을 갱신한다 = 행 락을 두고 줄을 선다 -->
+    <update id="addFinance">
+        UPDATE challenge_finance
+        SET success_headcount = success_headcount + 1,
+            total_refund      = total_refund + #{refundAmount}
+        WHERE challenge_id = #{challengeId}
+    </update>
+
+    <!-- 같은 결과를 1회로. 경합이 사라진다 -->
+    <update id="aggregateFinanceOnce" parameterType="long">
+        UPDATE challenge_finance cf
+        SET cf.success_headcount = (
+                SELECT COUNT(*) FROM challenge_user cu
+                WHERE cu.challenge_id = #{challengeId} AND cu.is_refunded = TRUE
+            ),
+            cf.total_refund = (
+                SELECT COALESCE(SUM(cu.refund_amount), 0) FROM challenge_user cu
+                WHERE cu.challenge_id = #{challengeId} AND cu.is_refunded = TRUE
+            )
+        WHERE cf.challenge_id = #{challengeId}
+    </update>
+
+</mapper>
