@@ -55,14 +55,20 @@
     </select>
     
 
-    <!-- SELECT ALL -->
+    <!--
+      SELECT ALL
+      ★ 원래 LIMIT 이 없어서 요청 하나가 챌린지의 전체 인증을 내려줬다.
+        인증 15,215행 기준으로 응답 9.9MB / 23.6초.
+        limit 상한은 서비스 계층에서 막는다 (파라미터로 원래 문제를 되살릴 수 있으므로).
+    -->
     <select id="getFeeds" parameterType="map" resultType="FeedDTO">
-        SELECT f.*, u.nickname 
+        SELECT f.*, u.nickname
         FROM feed f
         LEFT JOIN user u
           ON f.user_id = u.user_id
         WHERE f.challenge_id = #{challengeId}
         ORDER BY f.created_at DESC
+        LIMIT #{limit} OFFSET #{offset}
     </select>
 
     <select id="getChallengeFeeds" parameterType="map" resultType="ChallengeFeedDTO">
@@ -72,6 +78,7 @@
           ON f.user_id = u.user_id
         WHERE f.challenge_id = #{challengeId}
         ORDER BY f.created_at DESC
+        LIMIT #{limit} OFFSET #{offset}
     </select>
 
     <!-- INSERT -->
