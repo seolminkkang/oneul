@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import lombok.RequiredArgsConstructor;
@@ -28,8 +29,11 @@ public class FeedController {
     private final FeedService feedService;
 
     @GetMapping
-    public ResponseEntity<List<FeedDTO>> getFeeds(@PathVariable Long challengeId) {
-        return ResponseEntity.ok(feedService.getFeeds(challengeId));
+    public ResponseEntity<List<FeedDTO>> getFeeds(
+            @PathVariable Long challengeId,
+            @RequestParam(defaultValue = "20") int limit,
+            @RequestParam(defaultValue = "0") int offset) {
+        return ResponseEntity.ok(feedService.getFeeds(challengeId, limit, offset));
     }
 
     @GetMapping("/{id}")
@@ -38,8 +42,11 @@ public class FeedController {
     }
 
     @GetMapping("/challenge")
-    public ResponseEntity<List<ChallengeFeedDTO>> getChallengeFeeds(@PathVariable Long challengeId) {
-        return ResponseEntity.ok(feedService.getChallengeFeeds(challengeId));
+    public ResponseEntity<List<ChallengeFeedDTO>> getChallengeFeeds(
+            @PathVariable Long challengeId,
+            @RequestParam(defaultValue = "20") int limit,
+            @RequestParam(defaultValue = "0") int offset) {
+        return ResponseEntity.ok(feedService.getChallengeFeeds(challengeId, limit, offset));
     }
 
     @PostMapping

@@ -27,11 +27,15 @@ public interface FeedDAO {
 
     public List<CommunityFeedDTO> getCommunityFeeds();
 
-    public List<ChallengeFeedDTO> getChallengeFeeds(@Param("challengeId") Long challengeId);
+    public List<ChallengeFeedDTO> getChallengeFeeds(@Param("challengeId") Long challengeId,
+                                                    @Param("limit") int limit,
+                                                    @Param("offset") int offset);
 
     public List<StreakDTO> getStreak(@Param("userId") Long userId);
 
-    public List<FeedDTO> getFeeds(@Param("challengeId") Long challengeId);
+    public List<FeedDTO> getFeeds(@Param("challengeId") Long challengeId,
+                                  @Param("limit") int limit,
+                                  @Param("offset") int offset);
     
     public void evaluateFeed(FeedEvaluationRequest feedEvaluationRequest);
 }

@@ -55,9 +55,19 @@ public class FeedServiceImpl implements FeedService {
         return feed;
     }
 
-    @Override   
-    public List<FeedDTO> getFeeds(Long challengeId) {
-        List<FeedDTO> feeds = feedDAO.getFeeds(challengeId);
+    /** 상한을 넘기거나 음수를 주면 안전한 값으로 되돌린다 */
+    private int clampLimit(int limit) {
+        if (limit <= 0) return DEFAULT_PAGE_SIZE;
+        return Math.min(limit, MAX_PAGE_SIZE);
+    }
+
+    private int clampOffset(int offset) {
+        return Math.max(offset, 0);
+    }
+
+    @Override
+    public List<FeedDTO> getFeeds(Long challengeId, int limit, int offset) {
+        List<FeedDTO> feeds = feedDAO.getFeeds(challengeId, clampLimit(limit), clampOffset(offset));
         for (FeedDTO feed : feeds) {
             if (!feed.getImageUrl().startsWith("uploads")) {
                 continue;
@@ -96,8 +106,9 @@ public class FeedServiceImpl implements FeedService {
     }
 
     @Override
-    public List<ChallengeFeedDTO> getChallengeFeeds(Long challengeId) {
-        List<ChallengeFeedDTO> challengeFeeds = feedDAO.getChallengeFeeds(challengeId);
+    public List<ChallengeFeedDTO> getChallengeFeeds(Long challengeId, int limit, int offset) {
+        List<ChallengeFeedDTO> challengeFeeds =
+                feedDAO.getChallengeFeeds(challengeId, clampLimit(limit), clampOffset(offset));
         for (ChallengeFeedDTO challengeFeed : challengeFeeds) {
             if (!challengeFeed.getImageUrl().startsWith("uploads")) {
                 continue;
