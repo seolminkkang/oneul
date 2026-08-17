@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="store.oneul.mvc.feed.dao.FeedLikeDAO">
+
+    <select id="existsLike" resultType="int">
+        SELECT COUNT(*)
+        FROM feed_like
+        WHERE feed_id = #{feedId} AND user_id = #{userId}
+    </select>
+
+    <!-- UNIQUE(feed_id, user_id) 위반 시 예외가 난다. 중복 좋아요의 최종 방어선 -->
+    <insert id="insertLike">
+        INSERT INTO feed_like (feed_id, user_id)
+        VALUES (#{feedId}, #{userId})
+    </insert>
+
+    <delete id="deleteLike">
+        DELETE FROM feed_like
+        WHERE feed_id = #{feedId} AND user_id = #{userId}
+    </delete>
+
+    <!--
+      ★ 비정규화 카운터.
+      한 피드에 좋아요가 몰리면 이 UPDATE 가 같은 행 하나를 두고 줄을 선다.
+      게다가 like_count 는 idx_feed_status_like_created 의 정렬 컬럼이라
+      값이 바뀔 때마다 인덱스 항목이 이동한다.
+    -->
+    <update id="increaseLikeCount">
+        UPDATE feed SET like_count = like_count + 1
+        WHERE id = #{feedId}
+    </update>
+
+    <update id="decreaseLikeCount">
+        UPDATE feed SET like_count = GREATEST(like_count - 1, 0)
+        WHERE id = #{feedId}
+    </update>
+
+    <select id="countLikes" resultType="int">
+        SELECT COUNT(*) FROM feed_like WHERE feed_id = #{feedId}
+    </select>
+
+</mapper>
