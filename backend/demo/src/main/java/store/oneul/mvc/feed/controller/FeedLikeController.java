@@ -27,12 +27,21 @@ public class FeedLikeController {
 
     private final FeedLikeService feedLikeService;
 
-    /** 좋아요 토글 */
+    /**
+     * 좋아요 토글.
+     *
+     * 토글 후의 실제 개수(likes)를 함께 돌려준다. 클라이언트가 ±1 로 추측하면
+     * 다른 기기에서 이미 눌러둔 경우 값이 어긋난다. 조회가 한 번 더 붙지만
+     * (feed_like 의 UNIQUE(feed_id,user_id) 인덱스를 타는 COUNT) 값이 확정된다.
+     */
     @PostMapping("/{feedId}/like")
     public ResponseEntity<Map<String, Object>> toggleLike(@PathVariable Long feedId,
                                                           @AuthenticationPrincipal UserDTO user) {
         boolean liked = feedLikeService.toggleLike(feedId, user.getUserId());
-        return ResponseEntity.ok(Map.of("feedId", feedId, "liked", liked));
+        return ResponseEntity.ok(Map.of(
+                "feedId", feedId,
+                "liked", liked,
+                "likes", feedLikeService.countLikes(feedId)));
     }
 
     /** 검증용 — feed_like 실제 행 수. like_count 와 어긋나는지 확인할 때 쓴다 */
