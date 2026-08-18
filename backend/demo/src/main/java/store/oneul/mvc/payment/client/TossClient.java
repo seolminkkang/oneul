@@ -29,7 +29,18 @@ public class TossClient {
 
     private final RestClient tossRestClient;
 
+    /**
+     * ★ 측정용 스텁. payment.toss.stub=true 일 때만 빈이 존재한다 (기본 없음 = 실제 호출).
+     * 보상 트랜잭션을 재려면 "결제 성공 + 내부 저장 실패"를 N건 만들어야 하는데
+     * 실제 결제 승인은 카드 정보와 결제창이 필요해 부하로 만들 수 없다.
+     */
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private TossStub stub;
+
     public TossConfirmResponse confirm(PaymentConfirmRequest request) {
+        if (stub != null) {
+            return stub.confirm(request);
+        }
         String encodedSecret = Base64.getEncoder()
                 .encodeToString((secretKey + ":").getBytes(StandardCharsets.UTF_8));
         // Authorization: Basic {Base64.encode(secretKey + ":")}
@@ -59,6 +70,10 @@ public class TossClient {
         }
     }
     public void cancel(String paymentKey, TossCancelRequest request) {
+        if (stub != null) {
+            stub.cancel(paymentKey);
+            return;
+        }
         String encodedSecret = Base64.getEncoder()
                 .encodeToString((secretKey + ":").getBytes(StandardCharsets.UTF_8));
 
