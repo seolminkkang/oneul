@@ -61,24 +61,54 @@
         인증 15,215행 기준으로 응답 9.9MB / 23.6초.
         limit 상한은 서비스 계층에서 막는다 (파라미터로 원래 문제를 되살릴 수 있으므로).
     -->
+    <!--
+      ★ id 를 먼저 뽑고 그다음에 조인한다 (deferred join / late row lookup).
+
+      그냥 `FROM feed f LEFT JOIN user u ... LIMIT ? OFFSET ?` 로 쓰면
+      MySQL 이 **해당 챌린지의 전체 행을 user 와 조인한 뒤에** OFFSET 을 적용한다.
+      실행 계획에 그대로 보인다 — 인증 15,359행 챌린지의 최심 페이지에서
+
+          Single-row index lookup on u using PRIMARY   loops=15359
+
+      20행만 필요한데 조인이 15,359번 돌았다. 최심 페이지 19.6ms 중 약 17ms 가 이것이고
+      순수 offset 스킵은 3ms 였다.
+
+      id 만 먼저 뽑으면 조인이 20번만 돈다.
+        OFFSET     0 :  0.066 -> 0.142ms  (첫 페이지는 미세하게 손해)
+        OFFSET  5000 :  7.58  -> 0.97ms   (7.8배)
+        OFFSET 15339 : 19.6   -> 2.95ms   (6.6배)
+
+      커서 페이징은 남은 3ms 도 없애지만 프론트 수정과 임의 페이지 점프 포기가 따라온다.
+      3ms 에 그 대가를 낼 이유가 없어 도입하지 않았다.
+      재검토 조건: 한 챌린지 인증이 수십만 건.
+      근거: notes/wiki/feed-list-paging.md
+    -->
     <select id="getFeeds" parameterType="map" resultType="FeedDTO">
         SELECT f.*, u.nickname
-        FROM feed f
-        LEFT JOIN user u
-          ON f.user_id = u.user_id
-        WHERE f.challenge_id = #{challengeId}
+        FROM (
+            SELECT id
+            FROM feed
+            WHERE challenge_id = #{challengeId}
+            ORDER BY created_at DESC
+            LIMIT #{limit} OFFSET #{offset}
+        ) k
+        JOIN feed f ON f.id = k.id
+        LEFT JOIN user u ON f.user_id = u.user_id
         ORDER BY f.created_at DESC
-        LIMIT #{limit} OFFSET #{offset}
     </select>
 
     <select id="getChallengeFeeds" parameterType="map" resultType="ChallengeFeedDTO">
         SELECT f.*, u.nickname, u.profile_img
-        FROM feed f
-        LEFT JOIN user u
-          ON f.user_id = u.user_id
-        WHERE f.challenge_id = #{challengeId}
+        FROM (
+            SELECT id
+            FROM feed
+            WHERE challenge_id = #{challengeId}
+            ORDER BY created_at DESC
+            LIMIT #{limit} OFFSET #{offset}
+        ) k
+        JOIN feed f ON f.id = k.id
+        LEFT JOIN user u ON f.user_id = u.user_id
         ORDER BY f.created_at DESC
-        LIMIT #{limit} OFFSET #{offset}
     </select>
 
     <!-- INSERT -->
