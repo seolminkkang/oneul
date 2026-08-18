@@ -122,6 +122,18 @@
 		    <artifactId>spring-boot-starter-data-redis</artifactId>
 		</dependency>
 
+		<!--
+		  S3 presigned URL 캐시용. 버전은 spring-boot-starter-parent 의 BOM 이 관리한다.
+		  Redis 를 쓰지 않은 이유: 서명은 (버킷, 키, 유효기간)만으로 결정되는 로컬 연산이라
+		  인스턴스별로 각자 캐시해도 정합성 문제가 없다. 네트워크 왕복을 붙이면
+		  줄이려는 비용(건당 약 2ms)에 가까워져 이득이 사라진다.
+		  직접 만들지 않은 이유: 만료와 크기 제한이 버그가 나는 자리다.
+		-->
+		<dependency>
+		    <groupId>com.github.ben-manes.caffeine</groupId>
+		    <artifactId>caffeine</artifactId>
+		</dependency>
+
 		<!--aws s3-->
 		<dependency>
 			<groupId>software.amazon.awssdk</groupId>
