@@ -28,6 +28,10 @@ public class PaymentUsecase {
     private final PaymentSaveService paymentSaveService;
     private final CompensationService compensationService;
 
+    /** ★ 측정용 스위치. 기본값 켜짐. 끄면 보상 없이 방치되는 Before 상태가 된다 */
+    @org.springframework.beans.factory.annotation.Value("${payment.compensation-enabled:true}")
+    private boolean compensationEnabled;
+
 
     public PaymentResultResponse confirmPayment(Long userId, PaymentConfirmRequest request) {
 
@@ -55,6 +59,15 @@ public class PaymentUsecase {
 
         } catch (Exception e) {
             log.error("결제 저장 실패 → 보상 트랜잭션 진입, orderId: {}", tossResponse.getOrderId(), e);
+
+            // ★ 측정용: 보상 흐름을 끈 상태를 만든다 (Before 조건).
+            // 끄면 토스에는 돈이 들어와 있는데 우리 DB 에는 아무 기록도 없는 상태로 남는다.
+            // 그게 "미환불"이고, 그 건수가 이 항목의 Before 숫자다.
+            // 기본값은 켜짐이다 — 설정을 빠뜨렸을 때 돈이 방치되는 쪽으로 실패해선 안 된다.
+            if (!compensationEnabled) {
+                log.warn("보상 흐름이 꺼져 있다 (측정 조건). orderId: {}", tossResponse.getOrderId());
+                return PaymentResultResponse.refundPending(tossResponse);
+            }
 
             // 6. 보상 흐름은 CompensationService가 담당
             CompensationResultDTO compensationResult = compensationService.compensate(event);
